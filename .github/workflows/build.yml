@@ -1,0 +1,47 @@
+name: Build AmneWRT
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y build-essential clang flex bison g++ gawk gettext \
+          git libncurses5-dev libssl-dev python3 rsync unzip zlib1g-dev file wget
+
+      - name: Clone OpenWrt
+        run: |
+          git clone https://git.openwrt.org/openwrt/openwrt.git openwrt
+          cd openwrt
+          git checkout v23.05.6
+
+      - name: Replace feeds
+        run: cp feeds.conf.default openwrt/feeds.conf.default
+
+      - name: Update feeds
+        run: |
+          cd openwrt
+          ./scripts/feeds update -a
+          ./scripts/feeds install -a
+
+      - name: Copy config
+        run: cp .config openwrt/.config
+
+      - name: Build
+        run: |
+          cd openwrt
+          make defconfig
+          make -j$(nproc)
+
+      - name: Upload firmware
+        uses: actions/upload-artifact@v4
+        with:
+          name: Archer-C6-AmneWRT
+          path: openwrt/bin/targets/ipq40xx/generic/*

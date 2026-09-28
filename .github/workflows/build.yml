@@ -22,8 +22,10 @@ jobs:
           cd openwrt
           git checkout v23.05.6
 
-      - name: Replace feeds
-        run: cp feeds.conf.default openwrt/feeds.conf.default
+      - name: Copy custom files
+        run: |
+          cp feeds.conf.default openwrt/feeds.conf.default
+          cp .config openwrt/.config
 
       - name: Update feeds
         run: |
@@ -31,13 +33,14 @@ jobs:
           ./scripts/feeds update -a
           ./scripts/feeds install -a
 
-      - name: Copy config
-        run: cp .config openwrt/.config
-
-      - name: Build
+      - name: Apply config
         run: |
           cd openwrt
           make defconfig
+
+      - name: Build firmware
+        run: |
+          cd openwrt
           make -j$(nproc)
 
       - name: Upload firmware
